@@ -1,0 +1,23 @@
+# File-file cache Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Folder Virtual Environment
+venv/
+env/
+.env
+
+# Database
+*.sqlite3
+db.sqlite3
+
+# File-file spesifik Django
+.DS_Store
+*.log
+local_settings.py
+
+# Static files hasil collectstatic
+/static/
+/media/

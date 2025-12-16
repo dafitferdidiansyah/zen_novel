@@ -1,0 +1,122 @@
+{% extends 'library/base.html' %}
+{% block content %}
+<style>
+    .detail-header { display: flex; gap: 40px; margin-bottom: 40px; flex-wrap: wrap; }
+    
+    .detail-cover { width: 220px; flex-shrink: 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+    .detail-cover img { width: 100%; height: auto; display: block; }
+    
+    .detail-info { flex: 1; min-width: 300px; }
+    .novel-title { font-size: 2rem; font-weight: 800; line-height: 1.2; margin-bottom: 10px; color: var(--text-main); }
+    
+    .meta-tags { display: flex; gap: 10px; margin-bottom: 20px; font-size: 0.9rem; }
+    .tag { background: var(--bg-input); padding: 5px 10px; border-radius: 4px; color: var(--text-muted); }
+    
+    .stats { display: flex; gap: 30px; margin-bottom: 30px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 15px 0; }
+    .stat-item strong { display: block; font-size: 1.2rem; color: var(--text-main); }
+    .stat-item span { font-size: 0.85rem; color: var(--text-muted); }
+    
+    .action-buttons { display: flex; gap: 15px; margin-top: 20px; }
+    
+    /* Chapter List Style */
+    .chapter-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 20px; }
+    .chapter-item { 
+        background: var(--bg-card); border: 1px solid var(--border); padding: 12px 15px; 
+        border-radius: 6px; font-size: 0.9rem; color: var(--text-muted); 
+        transition: 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
+    }
+    .chapter-item:hover { border-color: var(--primary); color: var(--primary); background: var(--bg-input); }
+
+    /* Rating Star Interactive */
+    .star-rating span { font-size: 1.5rem; cursor: pointer; color: #444; transition: 0.2s; }
+    .star-rating span:hover, .star-rating span.active { color: #f1c40f; }
+</style>
+
+<div class="detail-header">
+    <div class="detail-cover">
+        {% if novel.cover %}
+            <img src="{{ novel.cover.url }}" alt="{{ novel.title }}">
+        {% else %}
+            <div style="width:100%;height:300px;background:#333;display:flex;align-items:center;justify-content:center;font-size:3rem;">📚</div>
+        {% endif %}
+    </div>
+    
+    <div class="detail-info">
+        <h1 class="novel-title">{{ novel.title }}</h1>
+        <div class="meta-tags">
+            <span class="tag">👤 {{ novel.author }}</span>
+            <span class="tag">📂 {{ novel.genre }}</span>
+            <span class="tag">Status: {{ novel.status }}</span>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <strong id="avg-score">{{ novel.average_rating }}</strong>
+                <span>Rating</span>
+            </div>
+            <div class="stat-item">
+                <strong>{{ chapters.count }}</strong>
+                <span>Bab</span>
+            </div>
+            <div class="stat-item">
+                <div class="star-rating">
+                    <span onclick="rate(1)">★</span>
+                    <span onclick="rate(2)">★</span>
+                    <span onclick="rate(3)">★</span>
+                    <span onclick="rate(4)">★</span>
+                    <span onclick="rate(5)">★</span>
+                </div>
+                <span>Beri Nilai</span>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            {% if chapters %}
+                <a href="{% url 'read_chapter' chapters.first.id %}" class="btn" style="padding: 12px 30px; font-size: 1rem;">
+                    🚀 BACA SEKARANG
+                </a>
+            {% endif %}
+
+            {% if user.is_authenticated %}
+                <a href="{% url 'toggle_bookmark' novel.id %}" class="btn btn-outline">
+                    {% if is_bookmarked %}♥ Hapus Library{% else %}♡ Tambah Library{% endif %}
+                </a>
+            {% else %}
+                <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-outline">
+                    🔒 Login untuk Simpan
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<h3 style="margin-bottom: 20px; font-weight: 700;">Daftar Isi</h3>
+<div class="chapter-list">
+    {% for chap in chapters %}
+        <a href="{% url 'read_chapter' chap.id %}" class="chapter-item">
+            {{ chap.title }}
+        </a>
+    {% endfor %}
+</div>
+
+<script>
+    function rate(val) {
+        fetch('/api/rate/{{ novel.id }}/', {
+            method: 'POST', body: JSON.stringify({score: val})
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.status === 'ok') {
+                document.getElementById('avg-score').innerText = data.new_avg;
+                // Highlight stars
+                const stars = document.querySelectorAll('.star-rating span');
+                stars.forEach((s, i) => {
+                    if (i < val) s.classList.add('active');
+                    else s.classList.remove('active');
+                });
+                alert('Terima kasih! Rating Anda: ' + val);
+            }
+        });
+    }
+</script>
+{% endblock %}

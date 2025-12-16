@@ -1,0 +1,22 @@
+{% extends 'library/base.html' %}
+{% block content %}
+<h2 style="color:var(--gold); border-bottom:1px solid var(--border); padding-bottom:10px;">MY LIBRARY</h2>
+<div class="grid">
+    {% for item in bookmarks %}
+    <div class="card">
+        <a href="{% url 'novel_detail' item.novel.id %}">
+            <div class="cover">
+                {% if item.novel.cover %}<img src="{{ item.novel.cover.url }}">{% else %}<span>📖</span>{% endif %}
+                <div class="badge">{{ item.novel.status }}</div>
+            </div>
+            <div style="padding:10px;">
+                <div style="font-size:14px; font-weight:bold;">{{ item.novel.title }}</div>
+                <div style="font-size:12px; color:gray;">Ditambahkan: {{ item.created_at|date:"d M Y" }}</div>
+            </div>
+        </a>
+    </div>
+    {% empty %}
+    <p>Belum ada novel yang dibookmark.</p>
+    {% endfor %}
+</div>
+{% endblock %}
