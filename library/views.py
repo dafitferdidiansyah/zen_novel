@@ -39,36 +39,30 @@ def home(request):
     }
     return render(request, 'library/home.html', context)
 
-# --- VIEW SEARCH (PERBAIKAN LOGIKA) ---
+# --- VIEW SEARCH ---
 def search_view(request):
     query = request.GET.get('q', '')
-    # AMBIL LIST GENRE (Multi-select)
     selected_genres = request.GET.getlist('genre') 
     
     novels = Novel.objects.all()
     
-    # 1. Filter Text (Judul/Author)
     if query:
         novels = novels.filter(Q(title__icontains=query) | Q(author__icontains=query))
     
-    # 2. Filter Genre (Multi-select)
-    # Logika: Tampilkan novel yang genrenya COCOK dengan SALAH SATU genre yang dipilih
     if selected_genres:
         genre_query = Q()
         for g in selected_genres:
-            # Gunakan icontains jaga-jaga kalau di DB tertulis "Action, Fantasy"
             genre_query |= Q(genre__icontains=g) 
         novels = novels.filter(genre_query)
 
     context = {
         'novels': novels,
         'query': query,
-        'selected_genres': selected_genres, # Kirim balik ke template agar checkbox tetap tercentang
+        'selected_genres': selected_genres,
         'is_search': True,
         **get_common_context()
     }
     return render(request, 'library/home.html', context)
-
 
 # --- VIEW NOVEL & BACA ---
 def novel_detail(request, novel_id):
@@ -99,12 +93,11 @@ def read_chapter(request, chapter_id):
     })
 
     # Simpan History ke Cookie
-    import json
     history_cookie = request.COOKIES.get('zn_history', '{}')
     try: data = json.loads(history_cookie)
     except: data = {}
     data[str(novel.id)] = chapter.id
-    response.set_cookie('zn_history', json.dumps(data), max_age=2592000) # 30 hari
+    response.set_cookie('zn_history', json.dumps(data), max_age=2592000) 
     
     return response
 
@@ -118,7 +111,8 @@ def login_view(request):
             if 'next' in request.GET: return redirect(request.GET['next'])
             return redirect('home')
     else: form = AuthenticationForm()
-    return render(request, 'library/auth.html', {'form': form, 'title': 'Masuk', **get_common_context()})
+    # Title diubah ke Inggris
+    return render(request, 'library/auth.html', {'form': form, 'title': 'Login', **get_common_context()})
 
 def register_view(request):
     if request.method == 'POST':
@@ -128,21 +122,17 @@ def register_view(request):
             login(request, user)
             return redirect('home')
     else: form = UserCreationForm()
-    return render(request, 'library/auth.html', {'form': form, 'title': 'Daftar', **get_common_context()})
+    # Title diubah ke Inggris
+    return render(request, 'library/auth.html', {'form': form, 'title': 'Register', **get_common_context()})
 
-# PERBAIKAN LOGOUT: Buat manual agar support GET request
 def logout_view(request):
     logout(request)
     return redirect('home')
 
 # --- FITUR LAIN ---
-# (Pastikan csrf_exempt diimport jika belum: from django.views.decorators.csrf import csrf_exempt)
-from django.views.decorators.csrf import csrf_exempt
-
 @csrf_exempt
 def rate_novel(request, novel_id):
     if request.method == 'POST':
-        import json
         try:
             data = json.loads(request.body)
             score = int(data.get('score', 0))

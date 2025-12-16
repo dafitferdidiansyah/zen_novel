@@ -1,44 +1,13 @@
 {% extends 'library/base.html' %}
 {% block content %}
 <style>
-    .reader-container {
-        max-width: 800px; 
-        margin: 0 auto; 
-        background: var(--bg-card); 
-        padding: 50px 40px; 
-        border-radius: var(--radius);
-        box-shadow: var(--shadow);
-    }
-    
-    .chapter-title { 
-        text-align: center; font-family: var(--font-ui); 
-        font-size: 1.8rem; font-weight: 700; margin-bottom: 40px; 
-        color: var(--primary);
-        padding-bottom: 20px; border-bottom: 1px solid var(--border);
-    }
-
-    .chapter-text {
-        font-family: var(--font-read);
-        font-size: 1.15rem;
-        line-height: 1.8;
-        color: var(--text-main);
-        text-align: justify;
-    }
-    
+    .reader-container { max-width: 800px; margin: 0 auto; background: var(--card); padding: 50px 40px; border-radius: 8px; border: 1px solid var(--border); }
+    .chapter-title { text-align: center; font-size: 1.8rem; font-weight: 700; margin-bottom: 40px; color: var(--gold); padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+    .chapter-text { font-family: 'Merriweather', serif; font-size: 1.15rem; line-height: 1.8; color: var(--text); text-align: justify; }
     .chapter-text p { margin-bottom: 1.5em; }
-
-    /* Floating Navigation */
-    .nav-buttons { 
-        display: flex; justify-content: space-between; margin-top: 50px; 
-        padding-top: 20px; border-top: 1px solid var(--border);
-    }
-    
-    .nav-btn {
-        background: var(--bg-input); color: var(--text-main);
-        padding: 10px 20px; border-radius: 30px; font-weight: 600; font-size: 0.9rem;
-        transition: 0.2s;
-    }
-    .nav-btn:hover { background: var(--primary); color: white; }
+    .nav-buttons { display: flex; justify-content: space-between; margin-top: 50px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .nav-btn { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 10px 20px; border-radius: 30px; font-weight: 600; font-size: 0.9rem; transition: 0.2s; }
+    .nav-btn:hover { border-color: var(--gold); color: var(--gold); }
     .nav-btn.disabled { opacity: 0.5; pointer-events: none; }
 </style>
 
@@ -51,22 +20,22 @@
 
     <div class="nav-buttons">
         {% if prev %}
-            <a href="{% url 'read_chapter' prev.id %}" class="nav-btn">« Sebelumnya</a>
+            <a href="{% url 'read_chapter' prev.id %}" class="nav-btn">« Previous</a>
         {% else %}
-            <span class="nav-btn disabled">« Sebelumnya</span>
+            <span class="nav-btn disabled">« Previous</span>
         {% endif %}
 
-        <a href="{% url 'novel_detail' novel.id %}" class="nav-btn" style="background:transparent; border:1px solid var(--border);">
+        <a href="{% url 'novel_detail' novel.id %}" class="nav-btn" style="border:none;">
             ≡ Table of Contents
         </a>
 
         {% if next %}
-            <a href="{% url 'read_chapter' next.id %}" class="nav-btn">Selanjutnya »</a>
+            <a href="{% url 'read_chapter' next.id %}" class="nav-btn">Next »</a>
         {% else %}
-            <span class="nav-btn disabled">Selanjutnya »</span>
+            <span class="nav-btn disabled">Next »</span>
         {% endif %}
     </div>
 </div>
 
-<button onclick="window.scrollTo({top:0, behavior:'smooth'})" style="position:fixed; bottom:20px; right:20px; background:var(--primary); width:40px; height:40px; border-radius:50%; border:none; color:#fff; cursor:pointer; font-size:1.2rem; box-shadow:0 4px 6px rgba(0,0,0,0.3);">↑</button>
+<button onclick="window.scrollTo({top:0, behavior:'smooth'})" style="position:fixed; bottom:20px; right:20px; background:var(--gold); width:40px; height:40px; border-radius:50%; border:none; color:#000; cursor:pointer; font-size:1.2rem;">↑</button>
 {% endblock %}

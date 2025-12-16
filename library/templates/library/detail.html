@@ -1,79 +1,32 @@
 {% extends 'library/base.html' %}
 {% block content %}
 <style>
-    /* Container Header: Flexbox biar sejajar */
-    .detail-header { 
-        display: flex; 
-        gap: 30px; 
-        margin-bottom: 40px; 
-        align-items: flex-start; /* Kunci biar rata atas */
-    }
-    
-    /* Cover: Ukuran Fix biar konsisten */
-    .detail-cover { 
-        width: 200px; 
-        flex-shrink: 0; 
-        border-radius: var(--radius); 
-        overflow: hidden; 
-        box-shadow: 0 5px 15px rgba(0,0,0,0.3); 
-    }
+    /* CSS SAMA PERSIS SEPERTI SEBELUMNYA */
+    .detail-header { display: flex; gap: 30px; margin-bottom: 40px; align-items: flex-start; }
+    .detail-cover { width: 200px; flex-shrink: 0; border-radius: var(--radius); overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
     .detail-cover img { width: 100%; height: auto; display: block; aspect-ratio: 2/3; object-fit: cover; }
-    
-    /* Info Section */
     .detail-info { flex: 1; display: flex; flex-direction: column; justify-content: center; min-width: 300px; }
-    
-    .novel-title { 
-        font-size: 1.8rem; /* Sedikit dikecilkan biar gak overwhelming */
-        font-weight: 800; 
-        line-height: 1.3; 
-        margin-bottom: 10px; 
-        color: var(--text); 
-    }
-    
-    /* Tags: Lebih rapi */
+    .novel-title { font-size: 1.8rem; font-weight: 800; line-height: 1.3; margin-bottom: 10px; color: var(--text); }
     .meta-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; font-size: 0.85rem; }
-    .tag { 
-        background: var(--card); border: 1px solid var(--border); 
-        padding: 4px 10px; border-radius: 4px; color: var(--gold); 
-    }
-    
-    /* Stats Bar: Dibuat lebih tipis dan modern */
-    .stats { 
-        display: flex; gap: 40px; margin-bottom: 25px; 
-        padding: 15px 0; border-top: 1px dashed var(--border); border-bottom: 1px dashed var(--border); 
-    }
+    .tag { background: var(--card); border: 1px solid var(--border); padding: 4px 10px; border-radius: 4px; color: var(--gold); }
+    .stats { display: flex; gap: 40px; margin-bottom: 25px; padding: 15px 0; border-top: 1px dashed var(--border); border-bottom: 1px dashed var(--border); }
     .stat-item { text-align: center; }
     .stat-item strong { display: block; font-size: 1.1rem; color: var(--text); }
     .stat-item span { font-size: 0.8rem; color: gray; text-transform: uppercase; letter-spacing: 1px; }
-    
     .action-buttons { display: flex; gap: 15px; flex-wrap: wrap; }
-    
-    /* Chapter List Grid */
-    .chapter-list { 
-        display: grid; 
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); 
-        gap: 10px; 
-        margin-top: 15px; 
-    }
-    .chapter-item { 
-        background: var(--card); border: 1px solid var(--border); padding: 10px 15px; 
-        border-radius: 6px; font-size: 0.85rem; color: gray; 
-        transition: 0.2s; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
+    .chapter-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-top: 15px; }
+    .chapter-item { background: var(--card); border: 1px solid var(--border); padding: 10px 15px; border-radius: 6px; font-size: 0.85rem; color: gray; transition: 0.2s; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .chapter-item:hover { border-color: var(--gold); color: var(--gold); background: rgba(255,193,7,0.05); }
-
-    /* Stars */
     .star-rating span { font-size: 1.2rem; cursor: pointer; color: #444; transition: 0.2s; }
     .star-rating span:hover, .star-rating span.active { color: #ffc107; }
 
-    /* Responsif untuk HP */
     @media (max-width: 768px) {
         .detail-header { flex-direction: column; align-items: center; text-align: center; }
-        .detail-cover { width: 160px; box-shadow: 0 10px 20px rgba(0,0,0,0.4); margin-bottom: 10px; }
+        .detail-cover { width: 160px; margin-bottom: 10px; }
         .meta-tags { justify-content: center; }
         .stats { justify-content: center; gap: 20px; }
         .action-buttons { justify-content: center; width: 100%; }
-        .btn, .btn-outline { flex: 1; text-align: center; }
+        .btn-auth { flex: 1; text-align: center; }
     }
 </style>
 
@@ -108,20 +61,20 @@
                 <div class="star-rating">
                     <span onclick="rate(1)">★</span><span onclick="rate(2)">★</span><span onclick="rate(3)">★</span><span onclick="rate(4)">★</span><span onclick="rate(5)">★</span>
                 </div>
-                <span>Rate</span>
+                <span>Rate Novel</span>
             </div>
         </div>
 
         <div class="action-buttons">
             {% if chapters %}
                 <a href="{% url 'read_chapter' chapters.first.id %}" class="btn-auth" style="padding: 10px 25px;">
-                    📖 READ NOW
+                    🚀 READ NOW
                 </a>
             {% endif %}
 
             {% if user.is_authenticated %}
                 <a href="{% url 'toggle_bookmark' novel.id %}" class="btn-auth" style="background:transparent; border:1px solid var(--border); color:var(--text);">
-                    {% if is_bookmarked %}💔 Delete Library{% else %}❤️ Add Library{% endif %}
+                    {% if is_bookmarked %}💔 Remove Library{% else %}❤️ Add to Library{% endif %}
                 </a>
             {% else %}
                 <a href="{% url 'login' %}?next={{ request.path }}" class="btn-auth" style="background:transparent; border:1px solid var(--border); color:var(--text);">
@@ -139,7 +92,7 @@
             {{ chap.title }}
         </a>
     {% empty %}
-        <p style="color:gray; font-style:italic;">Belum ada chapter.</p>
+        <p style="color:gray; font-style:italic;">No chapters yet.</p>
     {% endfor %}
 </div>
 
@@ -157,7 +110,7 @@
                     if (i < val) s.classList.add('active');
                     else s.classList.remove('active');
                 });
-                alert('Terima kasih! Rating Anda: ' + val);
+                alert('Thank you! You rated: ' + val);
             }
         });
     }

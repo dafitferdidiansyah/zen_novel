@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="id" data-theme="dark">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZenNovel</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
+        /* CSS SAMA SEPERTI SEBELUMNYA */
         :root {
             --bg: #0f0f0f; --card: #1a1a1a; --text: #e0e0e0; 
             --gold: #ffc107; --border: #333; --hover: #252525;
@@ -25,70 +26,22 @@
         .logo { font-size: 1.6rem; font-weight: 800; letter-spacing: -1px; display: flex; align-items: center; gap: 5px; }
         .logo span { color: var(--gold); }
 
-        /* --- PERBAIKAN SEARCH BAR --- */
-        /* Bungkus semua input dalam form flex ini */
-        .search-form-container {
-            display: flex;
-            align-items: center;
-            flex: 1;
-            max-width: 600px;
-            gap: 15px;
-        }
-
+        /* Search & Dropdown */
+        .search-form-container { display: flex; align-items: center; flex: 1; max-width: 600px; gap: 15px; }
         .search-box { flex: 1; position: relative; }
-        .search-box input { 
-            width: 100%; background: var(--bg); border: 1px solid var(--border); 
-            padding: 10px 20px; border-radius: 25px; color: var(--text); 
-            outline: none; transition: 0.3s; 
-            /* Hapus padding right karena icon dihapus */
-        }
+        .search-box input { width: 100%; background: var(--bg); border: 1px solid var(--border); padding: 10px 20px; border-radius: 25px; color: var(--text); outline: none; transition: 0.3s; }
         .search-box input:focus { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(255,193,7,0.2); }
 
-        /* --- PERBAIKAN DROPDOWN (Agar tidak ngilang) --- */
         .dropdown { position: relative; cursor: pointer; font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; height: 100%; }
-        
-        .dropdown-menu {
-            display: none; 
-            position: absolute; 
-            top: 100%; /* Pas di bawah elemen */
-            right: 0; 
-            /* Ganti margin-top dengan padding-top transparan sebagai jembatan kursor */
-            padding-top: 15px; 
-            z-index: 999; 
-        }
-
-        /* Container asli menu ada di dalam padding wrapper */
-        .dropdown-content-inner {
-            background: var(--card); 
-            border: 1px solid var(--border); 
-            border-radius: 8px;
-            min-width: 200px; 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3); 
-            padding: 10px;
-            max-height: 400px; 
-            overflow-y: auto;
-        }
-
+        .dropdown-menu { display: none; position: absolute; top: 100%; right: 0; padding-top: 15px; z-index: 999; }
+        .dropdown-content-inner { background: var(--card); border: 1px solid var(--border); border-radius: 8px; min-width: 200px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 10px; max-height: 400px; overflow-y: auto; }
         .dropdown:hover .dropdown-menu { display: block; }
         
-        /* Style Checkbox Genre */
-        .genre-label {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px;
-            cursor: pointer;
-            transition: 0.2s;
-            border-radius: 4px;
-        }
+        .genre-label { display: flex; align-items: center; gap: 10px; padding: 8px; cursor: pointer; transition: 0.2s; border-radius: 4px; }
         .genre-label:hover { background: var(--hover); color: var(--gold); }
         .genre-label input[type="checkbox"] { accent-color: var(--gold); transform: scale(1.2); }
 
-        .btn-apply {
-            width: 100%; margin-top: 10px; 
-            background: var(--gold); border: none; padding: 8px; 
-            border-radius: 4px; font-weight: bold; cursor: pointer;
-        }
+        .btn-apply { width: 100%; margin-top: 10px; background: var(--gold); border: none; padding: 8px; border-radius: 4px; font-weight: bold; cursor: pointer; }
 
         .nav-menu { display: flex; align-items: center; gap: 20px; }
         .theme-btn { background: var(--border); border: none; color: var(--text); width: 35px; height: 35px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; }
@@ -109,29 +62,25 @@
             <a href="/" class="logo">⚡ ZEN<span>NOVEL</span></a>
 
             <form action="{% url 'search' %}" method="GET" class="search-form-container" id="mainSearchForm">
-                
                 <div class="dropdown">
                     <span>📂 <span class="label-desktop">Filter Genre</span> ▾</span>
                     <div class="dropdown-menu">
                         <div class="dropdown-content-inner">
-                            <div style="font-size: 0.8rem; color: gray; margin-bottom: 5px;">Pilih Genre:</div>
-                            
+                            <div style="font-size: 0.8rem; color: gray; margin-bottom: 5px;">Select Genre:</div>
                             {% for g in all_genres %}
                             <label class="genre-label">
-                                <input type="checkbox" name="genre" value="{{ g }}" 
-                                    {% if g in selected_genres %}checked{% endif %}>
+                                <input type="checkbox" name="genre" value="{{ g }}" {% if g in selected_genres %}checked{% endif %}>
                                 {{ g }}
                             </label>
                             {% endfor %}
-                            
                             <button type="submit" class="btn-apply">Apply Filter</button>
                         </div>
                     </div>
                 </div>
 
                 <div class="search-box">
-                    <input type="text" name="q" placeholder="Ketik judul lalu tekan Enter..." value="{{ query }}">
-                    </div>
+                    <input type="text" name="q" placeholder="Search novel title..." value="{{ query }}">
+                </div>
             </form>
 
             <div class="nav-menu">
@@ -151,6 +100,10 @@
         {% block content %}{% endblock %}
     </div>
 
+    <footer style="text-align: center; padding: 30px; color: #777; font-size: 0.8rem; border-top: 1px solid var(--border); margin-top: 50px;">
+        &copy; 2025 ZenNovel. Read Free Novels Without Limits.
+    </footer>
+
     <script>
         const saved = localStorage.getItem('zn_theme') || 'dark';
         document.documentElement.setAttribute('data-theme', saved);
@@ -162,4 +115,4 @@
         }
     </script>
 </body>
-</html>     
+</html>
