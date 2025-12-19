@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
 from library import views as html_views
@@ -10,19 +10,21 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     # --- API ENDPOINTS ---
-    path('api/home/', json_views.home_data, name='api_home_data'), # <--- BARU
+    path('api/home/', json_views.home_data, name='api_home_data'),
     path('api/novels/', json_views.novel_list, name='api_novel_list'),
     path('api/novels/<int:pk>/', json_views.novel_detail, name='api_novel_detail'),
     path('api/chapters/<int:pk>/', json_views.chapter_detail, name='api_chapter_detail'),
 
-    # --- USER & AUTH ---
+    # --- AUTH & USER ---
+    path('api/register/', json_views.register_api, name='api_register'),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/bookmarks/', json_views.user_bookmarks, name='api_user_bookmarks'),
     path('api/bookmarks/toggle/<int:pk>/', json_views.toggle_bookmark_api, name='api_toggle_bookmark'),
     path('api/progress/<int:novel_id>/<int:chapter_id>/', json_views.update_progress, name='api_update_progress'),
-    path('api/register/', json_views.register_api, name='api_register'),
-    # --- WEBSITE HTML LAMA (Opsional) ---
+    path('api/user/settings/', json_views.user_settings_api, name='api_user_settings'),
+
+    # --- HTML LAMA (Opsional) ---
     path('', html_views.home, name='home'),
     path('search/', html_views.search, name='search'),
     path('novel/<int:novel_id>/', html_views.detail, name='detail'),
