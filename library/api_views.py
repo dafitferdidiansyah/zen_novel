@@ -8,7 +8,7 @@ from django.db.models import Q
 from .models import Novel, Chapter, Bookmark, UserSettings
 from .serializers import (
     NovelListSerializer, NovelDetailSerializer, ChapterSerializer, 
-    UserSerializer, UserSettingsSerializer
+    UserSerializer, UserSettingsSerializer, CommentSerializer
 )
 
 # --- HOME DATA ---
@@ -117,3 +117,38 @@ def user_settings_api(request):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=400)
+
+@api_view(['GET'])
+def get_chapter_comments(request, chapter_id):
+    """Mengambil semua komentar di chapter tertentu"""
+    comments = Comment.objects.filter(chapter_id=chapter_id)
+    serializer = CommentSerializer(comments, many=True)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def post_chapter_comment(request, chapter_id):
+    """Mengirim komentar baru"""
+    chapter = get_object_or_404(Chapter, pk=chapter_id)
+    
+    # Buat instance serializer dengan data manual
+    serializer = CommentSerializer(data=request.data)
+    
+    if serializer.is_valid():
+        # Simpan dengan user yang sedang login & chapter yang dipilih
+        serializer.save(user=request.user, chapter=chapter)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_comment(request, comment_id):
+    """Hapus komentar (Cuma bisa hapus punya sendiri)"""
+    comment = get_object_or_404(Comment, pk=comment_id)
+    
+    if comment.user != request.user:
+        return Response({'detail': 'Not your comment!'}, status=status.HTTP_403_FORBIDDEN)
+        
+    comment.delete()
+    return Response({'status': 'deleted'})

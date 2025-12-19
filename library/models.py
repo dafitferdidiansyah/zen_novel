@@ -76,3 +76,17 @@ class UserSettings(models.Model):
     
     def __str__(self):
         return f"Settings for {self.user.username}"
+
+# Tambahkan di library/models.py
+
+class Comment(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    chapter = models.ForeignKey(Chapter, on_delete=models.CASCADE, related_name='comments')
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at'] # Komentar terbaru di atas
+
+    def __str__(self):
+        return f"{self.user.username} - {self.chapter.title}"

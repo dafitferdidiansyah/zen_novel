@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Novel, Chapter, UserSettings
+from .models import Novel, Chapter, UserSettings, Comment
 
 # Serializer untuk Chapter (Dipakai di Detail Novel & Baca)
 class ChapterSerializer(serializers.ModelSerializer):
@@ -46,3 +46,11 @@ class UserSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserSettings
         fields = ['font_size', 'line_height', 'theme']
+# Tambahkan di library/serializers.py
+
+class CommentSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True) # Biar muncul nama, bukan ID
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'username', 'text', 'created_at']

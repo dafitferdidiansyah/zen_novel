@@ -24,6 +24,11 @@ urlpatterns = [
     path('api/progress/<int:novel_id>/<int:chapter_id>/', json_views.update_progress, name='api_update_progress'),
     path('api/user/settings/', json_views.user_settings_api, name='api_user_settings'),
 
+    # --- API COMMENTS ---
+    path('api/comments/<int:chapter_id>/', json_views.get_chapter_comments, name='api_get_comments'),
+    path('api/comments/post/<int:chapter_id>/', json_views.post_chapter_comment, name='api_post_comment'),
+    path('api/comments/delete/<int:comment_id>/', json_views.delete_comment, name='api_delete_comment'),
+
     # --- HTML LAMA (Opsional) ---
     path('', html_views.home, name='home'),
     path('search/', html_views.search, name='search'),
