@@ -2,6 +2,13 @@ from django.db import models
 from django.db.models import Avg
 from django.contrib.auth.models import User
 
+class Tag(models.Model):
+    name = models.CharField(max_length=50)
+    slug = models.SlugField(unique=True)
+
+    def __str__(self):
+        return self.name
+
 class Novel(models.Model):
     STATUS_CHOICES = [('Ongoing', 'Ongoing'), ('Completed', 'Completed')]
     
@@ -9,12 +16,17 @@ class Novel(models.Model):
     author = models.CharField(max_length=255, default="Unknown")
     synopsis = models.TextField(blank=True, null=True, help_text="Ringkasan cerita")
     genre = models.CharField(max_length=100, default="Action", help_text="Contoh: Fantasy, Romance")
+    tags = models.ManyToManyField(Tag, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Ongoing')
     cover = models.ImageField(upload_to='covers/', null=True, blank=True)
     
-    # File Upload untuk Admin (Auto generate chapter)
+    # Metadata Baru untuk Sorting
+    views = models.IntegerField(default=0)
+    rating_score = models.FloatField(default=0.0)
+    
     epub_file = models.FileField(upload_to='epubs/', null=True, blank=True, help_text="Upload .epub/.txt di sini")
     uploaded_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True) 
 
     def average_rating(self):
         avg = self.votes.aggregate(Avg('score'))['score__avg']
@@ -50,15 +62,17 @@ class Bookmark(models.Model):
     novel = models.ForeignKey(Novel, on_delete=models.CASCADE)
     last_read_chapter = models.ForeignKey(Chapter, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now_add=True) # <--- TAMBAHAN PENTING
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = ('user', 'novel')
         ordering = ['-updated_at']
 
-class Tag(models.Model):
-    name = models.CharField(max_length=50)
-    slug = models.SlugField(unique=True)
-
+class UserSettings(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='settings')
+    font_size = models.IntegerField(default=18)
+    line_height = models.FloatField(default=1.8)
+    theme = models.CharField(max_length=20, default='dark') 
+    
     def __str__(self):
-        return self.name
+        return f"Settings for {self.user.username}"
