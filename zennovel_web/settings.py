@@ -30,16 +30,19 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',      # <--- Tambah ini
     'library',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     
     # WhiteNoise: Wajib ada di sini (urutan ke-2) untuk melayani CSS/JS di server
@@ -120,3 +123,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+CORS_ALLOWED_ORIGINS = [
+    "https://zennovel-frontend.netlify.app", # Contoh domain frontend Anda nanti
+    "http://localhost:3000", # Untuk testing di laptop (Vite/React)
+]
