@@ -16,4 +16,5 @@ urlpatterns = [
     path('bookmark/<int:novel_id>/', views.toggle_bookmark, name='toggle_bookmark'),
     path('my-library/', views.my_library, name='my_library'),
     path('api/rate/<int:novel_id>/', views.rate_novel, name='rate_novel'),
+    
 ]
