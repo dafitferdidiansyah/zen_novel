@@ -41,3 +41,8 @@ class UserSerializer(serializers.ModelSerializer):
             password=validated_data['password']
         )
         return user
+
+class UserSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserSettings
+        fields = ['font_size', 'line_height', 'theme']
