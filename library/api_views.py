@@ -5,7 +5,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
-from .models import Novel, Chapter, Bookmark, UserSettings, Comment
+from .models import Novel, Chapter, Bookmark, UserSettings, Comment,Tag, NovelVote
 from .serializers import (
     NovelListSerializer, NovelDetailSerializer, ChapterSerializer, 
     UserSerializer, UserSettingsSerializer, CommentSerializer
@@ -152,3 +152,41 @@ def delete_comment(request, comment_id):
         
     comment.delete()
     return Response({'status': 'deleted'})
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def rate_novel(request, pk):
+    """User memberi rating bintang (1-5)"""
+    novel = get_object_or_404(Novel, pk=pk)
+    score = request.data.get('score')
+
+    # Validasi input
+    if not score or not (1 <= int(score) <= 5):
+        return Response({'message': 'Score must be 1-5'}, status=400)
+
+    # Simpan/Update Vote
+    vote, created = NovelVote.objects.update_or_create(
+        novel=novel,
+        user=request.user,
+        defaults={'score': score}
+    )
+
+    # Hitung rata-rata baru (disimpan di novel biar cepat loadnya)
+    novel.rating_score = novel.average_rating()
+    novel.save()
+
+    return Response({'status': 'success', 'new_rating': novel.rating_score})
+
+@api_view(['GET'])
+def novels_by_tag(request, tag_slug):
+    """Mencari novel berdasarkan Tag"""
+    tag = get_object_or_404(Tag, slug=tag_slug)
+    novels = Novel.objects.filter(tags=tag)
+    
+    # Gunakan pagination biar sama kayak list biasa
+    paginator = PageNumberPagination()
+    paginator.page_size = 12
+    result_page = paginator.paginate_queryset(novels, request)
+    serializer = NovelListSerializer(result_page, many=True)
+    
+    return paginator.get_paginated_response(serializer.data)

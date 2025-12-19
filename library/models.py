@@ -29,6 +29,7 @@ class Novel(models.Model):
     updated_at = models.DateTimeField(auto_now=True) 
 
     def average_rating(self):
+        # Hitung rata-rata dari tabel votes
         avg = self.votes.aggregate(Avg('score'))['score__avg']
         return round(avg, 1) if avg else 0.0
 
@@ -50,12 +51,12 @@ class Chapter(models.Model):
 
 class NovelVote(models.Model):
     novel = models.ForeignKey(Novel, on_delete=models.CASCADE, related_name='votes')
-    session_key = models.CharField(max_length=40)
+    user = models.ForeignKey(User, on_delete=models.CASCADE) # Sekarang pakai User
     score = models.IntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('novel', 'session_key')
+        unique_together = ('novel', 'user')
 
 class Bookmark(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bookmarks')

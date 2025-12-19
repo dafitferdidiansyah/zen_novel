@@ -1,7 +1,13 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Novel, Chapter, UserSettings, Comment
+from .models import Novel, Chapter, UserSettings, Comment, Tag
 
+
+# 1. Tambahkan Serializer Tag paling atas
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ['id', 'name', 'slug']
 # Serializer untuk Chapter (Dipakai di Detail Novel & Baca)
 class ChapterSerializer(serializers.ModelSerializer):
     class Meta:
@@ -21,11 +27,12 @@ class NovelListSerializer(serializers.ModelSerializer):
 # Serializer Berat (Khusus untuk Halaman Detail saat diklik)
 class NovelDetailSerializer(serializers.ModelSerializer):
     chapters = ChapterSerializer(many=True, read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
     rating = serializers.FloatField(source='average_rating', read_only=True)
 
     class Meta:
         model = Novel
-        fields = ['id', 'title', 'author', 'synopsis', 'cover', 'genre', 'status', 'rating', 'uploaded_at', 'chapters']
+        fields = ['id', 'title', 'author', 'synopsis','tags', 'cover', 'genre', 'status', 'rating', 'uploaded_at', 'chapters']
 
 
 class UserSerializer(serializers.ModelSerializer):

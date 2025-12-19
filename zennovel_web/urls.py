@@ -29,6 +29,10 @@ urlpatterns = [
     path('api/comments/post/<int:chapter_id>/', json_views.post_chapter_comment, name='api_post_comment'),
     path('api/comments/delete/<int:comment_id>/', json_views.delete_comment, name='api_delete_comment'),
 
+    # --- RATING & TAGS ---
+    path('api/novels/<int:pk>/rate/', json_views.rate_novel, name='api_rate_novel'),
+    path('api/tag/<slug:tag_slug>/', json_views.novels_by_tag, name='api_novels_by_tag'),
+
     # --- HTML LAMA (Opsional) ---
     path('', html_views.home, name='home'),
     path('search/', html_views.search, name='search'),
