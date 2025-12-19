@@ -50,6 +50,15 @@ class Bookmark(models.Model):
     novel = models.ForeignKey(Novel, on_delete=models.CASCADE)
     last_read_chapter = models.ForeignKey(Chapter, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now_add=True) # <--- TAMBAHAN PENTING
 
     class Meta:
         unique_together = ('user', 'novel')
+        ordering = ['-updated_at']
+
+class Tag(models.Model):
+    name = models.CharField(max_length=50)
+    slug = models.SlugField(unique=True)
+
+    def __str__(self):
+        return self.name

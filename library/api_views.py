@@ -1,9 +1,11 @@
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework import status
 from rest_framework.pagination import PageNumberPagination
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
-from .models import Novel, Chapter
+from .models import Novel, Chapter, Bookmark
 from .serializers import NovelListSerializer, NovelDetailSerializer, ChapterSerializer
 
 @api_view(['GET'])
@@ -58,3 +60,41 @@ def chapter_detail(request, pk):
     data['novel_id'] = chapter.novel.id
     
     return Response(data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated]) # Wajib Login
+def user_bookmarks(request):
+    """Mengambil daftar novel yang dibookmark user"""
+    bookmarks = Bookmark.objects.filter(user=request.user)
+    # Kita ambil object novel-nya saja dari bookmark
+    novels = [b.novel for b in bookmarks]
+    serializer = NovelListSerializer(novels, many=True)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def toggle_bookmark_api(request, pk):
+    """Menambah atau Menghapus Bookmark"""
+    novel = get_object_or_404(Novel, pk=pk)
+    bookmark, created = Bookmark.objects.get_or_create(user=request.user, novel=novel)
+    
+    if created:
+        return Response({'status': 'added', 'message': 'Ditambahkan ke Library'})
+    else:
+        bookmark.delete()
+        return Response({'status': 'removed', 'message': 'Dihapus dari Library'})
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def update_progress(request, novel_id, chapter_id):
+    """Mencatat progress baca terakhir"""
+    novel = get_object_or_404(Novel, pk=novel_id)
+    chapter = get_object_or_404(Chapter, pk=chapter_id)
+    
+    # Update atau Buat Bookmark baru jika belum ada
+    bookmark, _ = Bookmark.objects.get_or_create(user=request.user, novel=novel)
+    bookmark.last_read_chapter = chapter
+    bookmark.save() # Ini akan otomatis update field 'updated_at'
+    
+    return Response({'status': 'updated', 'chapter': chapter.title})

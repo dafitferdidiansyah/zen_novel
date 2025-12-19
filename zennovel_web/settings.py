@@ -7,6 +7,7 @@ from pathlib import Path
 import os
 from decouple import config  # Pastikan sudah install python-decouple
 import dj_database_url       # Pastikan sudah install dj-database-url
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -130,7 +131,22 @@ CORS_ALLOW_ALL_ORIGINS = True
 # ]
 
 # Tambahkan ini di bagian paling bawah file settings.py
+# Di bagian INSTALLED_APPS (sudah ada, tidak perlu ubah)
+
+# Tambahkan ini di bagian REST_FRAMEWORK
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10,  # Menampilkan 10 novel per halaman (biar ringan)
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'PAGE_SIZE': 12,
+}
+
+# Konfigurasi JWT (Tambahkan di paling bawah file)
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1), # Login tahan 1 hari
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': False,
 }
