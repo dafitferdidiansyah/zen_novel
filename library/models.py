@@ -7,7 +7,6 @@ class Novel(models.Model):
     
     title = models.CharField(max_length=255)
     author = models.CharField(max_length=255, default="Unknown")
-    # Field Sinopsis yang sebelumnya hilang/error
     synopsis = models.TextField(blank=True, null=True, help_text="Ringkasan cerita")
     genre = models.CharField(max_length=100, default="Action", help_text="Contoh: Fantasy, Romance")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Ongoing')
@@ -29,7 +28,7 @@ class Chapter(models.Model):
     title = models.CharField(max_length=255)
     content = models.TextField()
     order = models.IntegerField(default=0)
-    uploaded_at = models.DateTimeField(auto_now_add=True) # Tambahan: untuk sorting chapter terbaru
+    uploaded_at = models.DateTimeField(auto_now_add=True) 
 
     class Meta:
         ordering = ['order']
@@ -49,7 +48,7 @@ class NovelVote(models.Model):
 class Bookmark(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bookmarks')
     novel = models.ForeignKey(Novel, on_delete=models.CASCADE)
-    last_read_chapter = models.ForeignKey(Chapter, on_delete=models.SET_NULL, null=True, blank=True) # Tambahan: ingat baca sampai mana
+    last_read_chapter = models.ForeignKey(Chapter, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

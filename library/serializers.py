@@ -7,7 +7,6 @@ class ChapterSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'order', 'uploaded_at']
 
 class NovelSerializer(serializers.ModelSerializer):
-    # Menampilkan chapter di dalam detail novel
     chapters = ChapterSerializer(many=True, read_only=True)
     rating = serializers.FloatField(source='average_rating', read_only=True)
 

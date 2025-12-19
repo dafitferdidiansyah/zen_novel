@@ -7,7 +7,7 @@ from .serializers import NovelSerializer, ChapterSerializer
 
 @api_view(['GET'])
 def novel_list(request):
-    """Mengambil list novel dengan fitur Search & Filter Genre"""
+    """API List Novel + Search + Filter"""
     query = request.GET.get('q')
     genre = request.GET.get('genre')
     
@@ -15,7 +15,6 @@ def novel_list(request):
 
     if query:
         novels = novels.filter(Q(title__icontains=query) | Q(author__icontains=query))
-    
     if genre:
         novels = novels.filter(genre__iexact=genre)
 
@@ -33,9 +32,9 @@ def chapter_detail(request, pk):
     chapter = get_object_or_404(Chapter, pk=pk)
     serializer = ChapterSerializer(chapter)
     data = serializer.data
-    data['content'] = chapter.content # Isi teks novel
+    data['content'] = chapter.content
     
-    # Navigasi API
+    # Navigasi Next/Prev ID untuk Frontend
     next_chap = Chapter.objects.filter(novel=chapter.novel, order__gt=chapter.order).order_by('order').first()
     prev_chap = Chapter.objects.filter(novel=chapter.novel, order__lt=chapter.order).order_by('-order').first()
     
