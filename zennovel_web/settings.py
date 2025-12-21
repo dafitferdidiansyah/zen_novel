@@ -128,7 +128,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOW_ALL_ORIGINS = False # Matikan all origins
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5174",
-    "http://localhost:5173", # Ganti dengan origin frontend lokal Anda
+    "http://localhost:5175", # Ganti dengan origin frontend lokal Anda
     "https://zennovel.netlify.app",
 ]
 # Tambahkan ini di bagian REST_FRAMEWORK

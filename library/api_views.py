@@ -117,31 +117,41 @@ def user_bookmarks(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def toggle_bookmark_api(request, pk):
-    novel = get_object_or_404(Novel, pk=pk)
+def toggle_bookmark(request, novel_id):
+    novel = get_object_or_404(Novel, pk=novel_id)
+    
     bookmark, created = Bookmark.objects.get_or_create(user=request.user, novel=novel)
-    if created:
-        return Response({'status': 'added'})
-    else:
-        bookmark.delete()
-        return Response({'status': 'removed'})
-
+    
+    # Logika Toggle: Balikkan status True/False
+    bookmark.is_in_library = not bookmark.is_in_library
+    bookmark.save()
+    
+    return Response({
+        "status": "success",
+        "is_bookmarked": bookmark.is_in_library, # Kembalikan status terbaru
+        "message": "Added to library" if bookmark.is_in_library else "Removed from library"
+    })
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def update_progress(request, novel_id, chapter_id):
     novel = get_object_or_404(Novel, pk=novel_id)
     chapter = get_object_or_404(Chapter, pk=chapter_id)
     
-    # Simpan progress ke database
-    bookmark, created = Bookmark.objects.update_or_create(
-        user=request.user, 
-        novel=novel,
-        defaults={'last_read_chapter': chapter}
-    )
-    bookmark.save() # Update timestamp
+    # Cari entry bookmark/history user untuk novel ini
+    # get_or_create: Kalau belum pernah baca sama sekali, buat baru.
+    bookmark, created = Bookmark.objects.get_or_create(user=request.user, novel=novel)
     
-    return Response({'status': 'updated'})
-
+    # Update progress bacaan
+    bookmark.last_read_chapter = chapter
+    # Kita tidak menyentuh bookmark.is_in_library di sini! 
+    # Jadi kalau is_in_library False (belum dilike), dia tetap False.
+    bookmark.save()
+    
+    return Response({
+        "status": "success", 
+        "message": f"Progress updated to {chapter.title}",
+        "chapter_id": chapter.id
+    })
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def user_settings_api(request):
@@ -213,3 +223,51 @@ def novels_by_tag(request, tag_slug):
 def genre_list_api(request):
     genres = Novel.objects.values_list('genre', flat=True).distinct().order_by('genre')
     return Response(list(genres))
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_bookmarks(request):
+    # Filter hanya yang benar-benar dibookmark user
+    bookmarks = Bookmark.objects.filter(user=request.user, is_in_library=True).select_related('novel', 'last_read_chapter')
+    
+    # Custom data return agar Frontend enak bacanya (Desktop Grid / Mobile List)
+    data = []
+    for b in bookmarks:
+        data.append({
+            "id": b.novel.id,
+            "title": b.novel.title,
+            "cover": b.novel.cover.url if b.novel.cover else None,
+            "current_chapter_id": b.last_read_chapter.id if b.last_read_chapter else None,
+            "current_chapter_title": b.last_read_chapter.title if b.last_read_chapter else "Belum dibaca",
+            "current_chapter_number": b.last_read_chapter.chapter_number if b.last_read_chapter else 0, # Pastikan ada field ini di model Chapter
+            "updated_at": b.updated_at
+        })
+        
+    return Response(data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_history(request):
+    # Ambil semua yang pernah dibaca (last_read_chapter tidak kosong)
+    # Urutkan dari yang terakhir kali dibuka (updated_at terbaru)
+    history = Bookmark.objects.filter(
+        user=request.user, 
+        last_read_chapter__isnull=False
+    ).select_related('novel', 'last_read_chapter').order_by('-updated_at')
+    
+    data = []
+    for h in history:
+        data.append({
+            "id": h.novel.id,
+            "title": h.novel.title,
+            "cover": h.novel.cover.url if h.novel.cover else None,
+            "current_chapter_id": h.last_read_chapter.id,
+            "current_chapter_title": h.last_read_chapter.title,
+            "current_chapter_number": h.last_read_chapter.order, # Pastikan field order/chapter_number sesuai model
+            "last_read_at": h.updated_at,
+            "is_in_library": h.is_in_library # Info tambahan: apakah novel ini ada di library juga?
+        })
+        
+    return Response(data)

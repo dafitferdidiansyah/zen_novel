@@ -61,15 +61,23 @@ class NovelVote(models.Model):
 
 class Bookmark(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bookmarks')
-    novel = models.ForeignKey(Novel, on_delete=models.CASCADE)
+    novel = models.ForeignKey(Novel, on_delete=models.CASCADE, related_name='bookmarked_by')
+    
+    # Progress Bacaan (HISTORY)
     last_read_chapter = models.ForeignKey(Chapter, on_delete=models.SET_NULL, null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(auto_now=True)  # Waktu terakhir baca
+    
+    # Status Koleksi (LIBRARY)
+    # Default False, artinya kalau cuma baca doang ga otomatis masuk library visual
+    is_in_library = models.BooleanField(default=False) 
 
     class Meta:
-        unique_together = ('user', 'novel')
         ordering = ['-updated_at']
+        unique_together = ('user', 'novel') # Satu user satu entry per novel
 
+    def __str__(self):
+        return f"{self.user.username} - {self.novel.title}"
+        
 class UserSettings(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='settings')
     font_size = models.IntegerField(default=18)

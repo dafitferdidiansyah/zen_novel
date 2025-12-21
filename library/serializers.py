@@ -42,9 +42,14 @@ class NovelDetailSerializer(serializers.ModelSerializer):
         ]
 
     def get_is_bookmarked(self, obj):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return Bookmark.objects.filter(user=request.user, novel=obj).exists()
+        user = self.context.get('request').user
+        if user.is_authenticated:
+            # Cek apakah ada bookmark DAN is_in_library = True
+            try:
+                bookmark = Bookmark.objects.get(user=user, novel=obj)
+                return bookmark.is_in_library
+            except Bookmark.DoesNotExist:
+                return False
         return False
 
 # --- 3. Chapter Detail (UPDATE DISINI) ---
