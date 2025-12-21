@@ -42,6 +42,7 @@ class Chapter(models.Model):
     title = models.CharField(max_length=255)
     content = models.TextField()
     order = models.FloatField(default=0.0)
+    chapter_index = models.FloatField(default=0, help_text="Nomor asli dari judul chapter")
     uploaded_at = models.DateTimeField(auto_now_add=True) 
 
     class Meta:
@@ -77,7 +78,7 @@ class Bookmark(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.novel.title}"
-        
+
 class UserSettings(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='settings')
     font_size = models.IntegerField(default=18)
