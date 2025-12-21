@@ -18,7 +18,7 @@ class Novel(models.Model):
     
     title = models.CharField(max_length=255, blank=True, default="New Novel") 
     author = models.CharField(max_length=255, default="Unknown", blank=True)
-    alternative_title = models.CharField(max_length=500, default="{title}", blank=True, null=True, help_text="Judul Asli / Jepang / Sinonim")
+    alternative_title = models.CharField(max_length=500, blank=True, null=True, help_text="Judul Asli / Jepang / Sinonim")
     synopsis = models.TextField(blank=True, null=True, help_text="Ringkasan cerita")
     genre = models.CharField(max_length=100, default="Action", help_text="Contoh: Fantasy, Romance")
     tags = models.ManyToManyField(Tag, blank=True)
@@ -33,6 +33,8 @@ class Novel(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True) 
     def save(self, *args, **kwargs):
+	if not self.alternative_title or self.alternative_title == "{title}":
+            self.alternative_title = self.title
         # Jalankan kompresi jika ada file cover dan file tersebut baru/berubah
         if self.cover:
             self.compress_cover()
