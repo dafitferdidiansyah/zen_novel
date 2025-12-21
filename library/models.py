@@ -14,7 +14,7 @@ class Novel(models.Model):
     
     title = models.CharField(max_length=255, blank=True, default="New Novel") 
     author = models.CharField(max_length=255, default="Unknown", blank=True)
-    alternative_title = models.CharField(max_length=500, blank=True, null=True, help_text="Judul Asli / Jepang / Sinonim")
+    alternative_title = models.CharField(max_length=500, default="{title}", blank=True, null=True, help_text="Judul Asli / Jepang / Sinonim")
     synopsis = models.TextField(blank=True, null=True, help_text="Ringkasan cerita")
     genre = models.CharField(max_length=100, default="Action", help_text="Contoh: Fantasy, Romance")
     tags = models.ManyToManyField(Tag, blank=True)
