@@ -40,7 +40,7 @@ class Chapter(models.Model):
     novel = models.ForeignKey(Novel, on_delete=models.CASCADE, related_name='chapters')
     title = models.CharField(max_length=255)
     content = models.TextField()
-    order = models.IntegerField(default=0)
+    order = models.FloatField(default=0.0)
     uploaded_at = models.DateTimeField(auto_now_add=True) 
 
     class Meta:

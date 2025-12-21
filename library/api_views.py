@@ -1,27 +1,49 @@
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated,AllowAny
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from django.db.models import Q,F
-from .models import Novel, Chapter, Bookmark, UserSettings, Comment,Tag, NovelVote
+from django.db.models import Q, F
+from .models import Novel, Chapter, Bookmark, UserSettings, Comment, Tag, NovelVote
+# Import ChapterDetailSerializer
 from .serializers import (
     NovelListSerializer, NovelDetailSerializer, ChapterSerializer, 
-    UserSerializer, UserSettingsSerializer, CommentSerializer
+    UserSerializer, UserSettingsSerializer, CommentSerializer,
+    ChapterDetailSerializer 
 )
 
 # --- HOME DATA ---
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def home_data(request):
     hot_novels = Novel.objects.order_by('-views')[:6]
     latest_novels = Novel.objects.order_by('-uploaded_at')[:10]
     completed_novels = Novel.objects.filter(status='Completed')[:5]
+    
+    # LOGIC RECENT READS (User Login)
+    recent_reads = []
+    if request.user.is_authenticated:
+        bookmarks = Bookmark.objects.filter(
+            user=request.user, 
+            last_read_chapter__isnull=False
+        ).select_related('novel', 'last_read_chapter').order_by('-updated_at')[:5]
+
+        for b in bookmarks:
+            recent_reads.append({
+                'id': b.novel.id,
+                'title': b.novel.title,
+                'cover': b.novel.cover.url if b.novel.cover else None,
+                'chapter_id': b.last_read_chapter.id,
+                'chapter_title': b.last_read_chapter.title,
+                'chapter_order': b.last_read_chapter.order,
+            })
 
     return Response({
         'hot': NovelListSerializer(hot_novels, many=True).data,
         'latest': NovelListSerializer(latest_novels, many=True).data,
-        'completed': NovelListSerializer(completed_novels, many=True).data
+        'completed': NovelListSerializer(completed_novels, many=True).data,
+        'recent': recent_reads
     })
 
 # --- NOVEL & CHAPTER ---
@@ -29,23 +51,17 @@ def home_data(request):
 def novel_list(request):
     query = request.GET.get('q')
     genre = request.GET.get('genre')
-    tag = request.GET.get('tag')  # Tangkap parameter tag
+    tag = request.GET.get('tag')
 
     novels = Novel.objects.all().order_by('-uploaded_at')
 
-    # Filter Pencarian Judul/Author
     if query:
         novels = novels.filter(Q(title__icontains=query) | Q(author__icontains=query))
-    
-    # Filter Genre
     if genre:
         novels = novels.filter(genre__iexact=genre)
-
-    # Filter Tag (Baru Ditambahkan)
     if tag:
-        # Filter berdasarkan Slug tag atau Nama tag
         novels = novels.filter(tags__slug__iexact=tag) | novels.filter(tags__name__iexact=tag)
-        novels = novels.distinct() # Hindari duplikat jika match keduanya
+        novels = novels.distinct()
 
     paginator = PageNumberPagination()
     paginator.page_size = 12
@@ -55,28 +71,30 @@ def novel_list(request):
 
 @api_view(['GET'])
 def novel_detail(request, pk):
-    # Update View Count (Opsional)
     Novel.objects.filter(pk=pk).update(views=F('views') + 1)
     novel = get_object_or_404(Novel, pk=pk)
-
-    # PENTING: Tambahkan context={'request': request}
     serializer = NovelDetailSerializer(novel, context={'request': request}) 
-    
     return Response(serializer.data)
 
 @api_view(['GET'])
 def chapter_detail(request, pk):
     chapter = get_object_or_404(Chapter, pk=pk)
-    serializer = ChapterSerializer(chapter)
-    data = serializer.data
-    data['content'] = chapter.content
     
+    # --- PERBAIKAN DISINI ---
+    # Gunakan ChapterDetailSerializer agar novel_title & novel_cover terkirim
+    serializer = ChapterDetailSerializer(chapter) 
+    
+    data = serializer.data
+    
+    # Tambahan navigasi next/prev manual (jika tidak tercover serializer)
     next_chap = Chapter.objects.filter(novel=chapter.novel, order__gt=chapter.order).order_by('order').first()
     prev_chap = Chapter.objects.filter(novel=chapter.novel, order__lt=chapter.order).order_by('-order').first()
     
     data['next_chapter_id'] = next_chap.id if next_chap else None
     data['prev_chapter_id'] = prev_chap.id if prev_chap else None
-    data['novel_id'] = chapter.novel.id
+    
+    # Pastikan novel_id ada (walaupun serializer sudah bawa)
+    data['novel_id'] = chapter.novel.id 
     
     return Response(data)
 
@@ -113,9 +131,15 @@ def toggle_bookmark_api(request, pk):
 def update_progress(request, novel_id, chapter_id):
     novel = get_object_or_404(Novel, pk=novel_id)
     chapter = get_object_or_404(Chapter, pk=chapter_id)
-    bookmark, _ = Bookmark.objects.get_or_create(user=request.user, novel=novel)
-    bookmark.last_read_chapter = chapter
-    bookmark.save()
+    
+    # Simpan progress ke database
+    bookmark, created = Bookmark.objects.update_or_create(
+        user=request.user, 
+        novel=novel,
+        defaults={'last_read_chapter': chapter}
+    )
+    bookmark.save() # Update timestamp
+    
     return Response({'status': 'updated'})
 
 @api_view(['GET', 'POST'])
@@ -134,7 +158,6 @@ def user_settings_api(request):
 
 @api_view(['GET'])
 def get_chapter_comments(request, chapter_id):
-    """Mengambil semua komentar di chapter tertentu"""
     comments = Comment.objects.filter(chapter_id=chapter_id)
     serializer = CommentSerializer(comments, many=True)
     return Response(serializer.data)
@@ -142,73 +165,51 @@ def get_chapter_comments(request, chapter_id):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def post_chapter_comment(request, chapter_id):
-    """Mengirim komentar baru"""
     chapter = get_object_or_404(Chapter, pk=chapter_id)
-    
-    # Buat instance serializer dengan data manual
     serializer = CommentSerializer(data=request.data)
-    
     if serializer.is_valid():
-        # Simpan dengan user yang sedang login & chapter yang dipilih
         serializer.save(user=request.user, chapter=chapter)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-        
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 def delete_comment(request, comment_id):
-    """Hapus komentar (Cuma bisa hapus punya sendiri)"""
     comment = get_object_or_404(Comment, pk=comment_id)
-    
     if comment.user != request.user:
         return Response({'detail': 'Not your comment!'}, status=status.HTTP_403_FORBIDDEN)
-        
     comment.delete()
     return Response({'status': 'deleted'})
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def rate_novel(request, pk):
-    """User memberi rating bintang (1-5)"""
     novel = get_object_or_404(Novel, pk=pk)
     score = request.data.get('score')
-
-    # Validasi input
     if not score or not (1 <= int(score) <= 5):
         return Response({'message': 'Score must be 1-5'}, status=400)
 
-    # Simpan/Update Vote
     vote, created = NovelVote.objects.update_or_create(
         novel=novel,
         user=request.user,
         defaults={'score': score}
     )
-
-    # Hitung rata-rata baru (disimpan di novel biar cepat loadnya)
     novel.rating_score = novel.average_rating()
     novel.save()
-
     return Response({'status': 'success', 'new_rating': novel.rating_score})
 
 @api_view(['GET'])
 def novels_by_tag(request, tag_slug):
-    """Mencari novel berdasarkan Tag"""
     tag = get_object_or_404(Tag, slug=tag_slug)
     novels = Novel.objects.filter(tags=tag)
-    
-    # Gunakan pagination biar sama kayak list biasa
     paginator = PageNumberPagination()
     paginator.page_size = 12
     result_page = paginator.paginate_queryset(novels, request)
     serializer = NovelListSerializer(result_page, many=True)
-    
     return paginator.get_paginated_response(serializer.data)
 
 @api_view(['GET'])
-@permission_classes([AllowAny]) # Penting: Biar user belum login bisa lihat genre di Home
+@permission_classes([AllowAny])
 def genre_list_api(request):
-    # Mengambil semua genre yang ada, membuang duplikat, dan mengurutkannya
     genres = Novel.objects.values_list('genre', flat=True).distinct().order_by('genre')
-    # Hasilnya contoh: ['Action', 'Comedy', 'Romance']
     return Response(list(genres))

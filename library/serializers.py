@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-# Pastikan semua model terimport, TERMASUK Bookmark
 from .models import Novel, Chapter, UserSettings, Comment, Tag, Bookmark
 
 # --- 1. Serializer Helper (Tag & Chapter) ---
@@ -17,23 +16,19 @@ class ChapterSerializer(serializers.ModelSerializer):
 
 # --- 2. Serializer Utama (List & Detail) ---
 
-# KHUSUS HOME PAGE (Ringan)
 class NovelListSerializer(serializers.ModelSerializer):
-    # Field tambahan (computed)
     rating = serializers.FloatField(source='average_rating', read_only=True)
     chapter_count = serializers.IntegerField(source='chapters.count', read_only=True)
 
     class Meta:
         model = Novel
-        # Genre sudah masuk disini, jadi di Home Page aman untuk filter/display
         fields = [
             'id', 'title', 'cover', 'genre', 'status', 
             'rating', 'chapter_count', 'uploaded_at','views'
         ]
 
-# KHUSUS DETAIL PAGE (Lengkap dengan Bookmark & Tags)
 class NovelDetailSerializer(serializers.ModelSerializer):
-    is_bookmarked = serializers.SerializerMethodField() # Custom Logic
+    is_bookmarked = serializers.SerializerMethodField()
     chapters = ChapterSerializer(many=True, read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     rating = serializers.FloatField(source='average_rating', read_only=True)
@@ -46,16 +41,31 @@ class NovelDetailSerializer(serializers.ModelSerializer):
             'chapters', 'is_bookmarked','views'
         ]
 
-    # LOGIC BOOKMARK (Harus di dalam class, sejajar dengan Meta)
     def get_is_bookmarked(self, obj):
-        # Mengambil user yang sedang request (dari token)
         request = self.context.get('request')
         if request and request.user.is_authenticated:
-            # Cek di database apakah user ini punya bookmark novel ini
             return Bookmark.objects.filter(user=request.user, novel=obj).exists()
         return False
 
-# --- 3. User & Fitur Lainnya ---
+# --- 3. Chapter Detail (UPDATE DISINI) ---
+
+class ChapterDetailSerializer(serializers.ModelSerializer):
+    # Ambil Judul & Cover Novel
+    novel_title = serializers.CharField(source='novel.title', read_only=True)
+    novel_cover = serializers.ImageField(source='novel.cover', read_only=True)
+    
+    # PERBAIKAN: Gunakan FloatField (bukan IntegerField)
+    # Ini memungkinkan order bernilai 1.5 (untuk Side Chapter) atau 100.1
+    chapter_number = serializers.FloatField(source='order', read_only=True)
+    
+    class Meta:
+        model = Chapter
+        fields = [
+            'id', 'novel_id', 'title', 'content', 
+            'chapter_number', 
+            'novel_title', 'novel_cover'
+        ]
+# --- 4. User & Fitur Lainnya ---
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -82,18 +92,3 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = ['id', 'username', 'text', 'created_at']
-
-# library/serializers.py
-
-class ChapterDetailSerializer(serializers.ModelSerializer):
-    # Tambahkan field tambahan ini
-    novel_title = serializers.CharField(source='novel.title', read_only=True)
-    novel_cover = serializers.ImageField(source='novel.cover', read_only=True)
-    
-    class Meta:
-        model = Chapter
-        fields = [
-            'id', 'novel_id', 'title', 'content', 
-            'chapter_number', 'prev_chapter_id', 'next_chapter_id',
-            'novel_title', 'novel_cover' # <--- Masukkan disini
-        ]
