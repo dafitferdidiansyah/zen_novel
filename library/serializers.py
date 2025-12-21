@@ -12,7 +12,7 @@ class TagSerializer(serializers.ModelSerializer):
 class ChapterSerializer(serializers.ModelSerializer):
     class Meta:
         model = Chapter
-        fields = ['id', 'title', 'order', 'uploaded_at']
+        fields = ['id', 'title', 'order', 'uploaded_at', 'chapter_index']
 
 # --- 2. Serializer Utama (List & Detail) ---
 
@@ -67,7 +67,7 @@ class ChapterDetailSerializer(serializers.ModelSerializer):
         model = Chapter
         fields = [
             'id', 'novel_id', 'title', 'content', 
-            'chapter_number', 
+            'chapter_number', 'chapter_index', 
             'novel_title', 'novel_cover'
         ]
 # --- 4. User & Fitur Lainnya ---

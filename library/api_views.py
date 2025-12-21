@@ -31,7 +31,7 @@ def home_data(request):
         for b in bookmarks:
             # Gunakan getattr untuk keamanan jika order kosong
             chap_num = getattr(b.last_read_chapter, 'order', 0) if b.last_read_chapter else 0
-            
+            chap_idx = getattr(b.last_read_chapter, 'chapter_index', 0) if b.last_read_chapter else 0
             recent_reads.append({
                 'id': b.novel.id,
                 'title': b.novel.title,
@@ -39,6 +39,7 @@ def home_data(request):
                 'chapter_id': b.last_read_chapter.id if b.last_read_chapter else None,
                 'chapter_title': b.last_read_chapter.title if b.last_read_chapter else "",
                 'chapter_order': chap_num, # Pastikan ini menggunakan variabel chap_num
+                'chapter_index': chap_idx,
             })
 
     return Response({
@@ -226,7 +227,7 @@ def get_bookmarks(request):
     for b in bookmarks:
         # PERBAIKAN: Gunakan .order (bukan .chapter_number)
         chap_num = getattr(b.last_read_chapter, 'order', 0) if b.last_read_chapter else 0
-        
+        chap_idx = getattr(b.last_read_chapter, 'chapter_index', 0) if b.last_read_chapter else 0
         data.append({
             "id": b.novel.id,
             "title": b.novel.title,
@@ -234,6 +235,7 @@ def get_bookmarks(request):
             "current_chapter_id": b.last_read_chapter.id if b.last_read_chapter else None,
             "current_chapter_title": b.last_read_chapter.title if b.last_read_chapter else "Belum dibaca",
             "current_chapter_number": chap_num, # SUDAH DIPERBAIKI
+            "current_chapter_index": chap_idx,
             "updated_at": b.updated_at
         })
         
@@ -252,7 +254,7 @@ def get_history(request):
     for h in history:
         # PERBAIKAN: Gunakan .order
         chap_num = getattr(h.last_read_chapter, 'order', 0) if h.last_read_chapter else 0
-        
+        chap_idx = getattr(h.last_read_chapter, 'chapter_index', 0) if h.last_read_chapter else 0
         data.append({
             "id": h.novel.id,
             "title": h.novel.title,
@@ -260,6 +262,7 @@ def get_history(request):
             "current_chapter_id": h.last_read_chapter.id,
             "current_chapter_title": h.last_read_chapter.title,
             "current_chapter_number": chap_num, # SUDAH DIPERBAIKI
+            "current_chapter_index": chap_idx,
             "last_read_at": h.updated_at,
             "is_in_library": h.is_in_library
         })
