@@ -1,18 +1,11 @@
 from django.contrib import admin
+from django.utils.html import format_html
+from django.urls import reverse
 from .models import Novel, Chapter, Bookmark, UserSettings, Comment, Tag, NovelVote
 from .utils import generate_chapters, get_epub_metadata
 
 # =====================================================
-# 1. INLINE: FITUR ADD MULTI CHAPTER (Editing Masal)
-# =====================================================
-class ChapterInline(admin.TabularInline):
-    model = Chapter
-    fields = ('title', 'order', 'chapter_index')
-    extra = 1  # Baris kosong untuk tambah manual
-    show_change_link = True # Tombol edit detail
-
-# =====================================================
-# 2. TAG ADMIN
+# 1. TAG ADMIN
 # =====================================================
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
@@ -20,104 +13,93 @@ class TagAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
 # =====================================================
-# 3. NOVEL ADMIN (Auto EPUB + Multi Chapter)
+# 2. NOVEL ADMIN (VERSI RINGAN & CEPAT)
 # =====================================================
 @admin.register(Novel)
 class NovelAdmin(admin.ModelAdmin):
-    list_display = ('title', 'author', 'status', 'total_chapters', 'views', 'uploaded_at')
+    list_display = ('title', 'author', 'status', 'view_chapters_link', 'uploaded_at')
     search_fields = ('title', 'author')
-    list_filter = ('status', 'genre', 'tags', 'uploaded_at')
+    list_filter = ('status', 'genre', 'uploaded_at')
     filter_horizontal = ('tags',)
     
-    # Menambahkan editor chapter di dalam halaman novel
-    inlines = [ChapterInline] 
+    # HAPUS INLINE (BIANG KEROK LEMOT)
+    # inlines = [ChapterInline] 
     
-    readonly_fields = ('views', 'rating_score')
+    # Kita ganti dengan tombol custom
+    readonly_fields = ('view_chapters_link', 'views', 'rating_score')
 
-    def total_chapters(self, obj):
-        return obj.chapters.count()
-    total_chapters.short_description = 'Chapters'
+    # --- FITUR TOMBOL PINTAR ---
+    def view_chapters_link(self, obj):
+        count = obj.chapters.count()
+        # Membuat URL ke halaman list chapter, difilter by id novel ini
+        url = (
+            reverse("admin:library_chapter_changelist")
+            + f"?novel__id__exact={obj.id}"
+        )
+        return format_html(
+            '<a class="button" href="{}" style="background-color:#417690; color:white; padding:5px 10px; border-radius:5px; text-decoration:none;">Lihat & Edit {} Chapters</a>',
+            url,
+            count
+        )
+    view_chapters_link.short_description = "Chapters"
+    view_chapters_link.allow_tags = True
 
-    # Logika Upload EPUB Otomatis
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
         
+        # Proses EPUB
         if 'epub_file' in form.changed_data and obj.epub_file:
             try:
                 meta = get_epub_metadata(obj.epub_file.path)
                 updated = False
-                
-                # Isi data otomatis jika kosong
                 if not obj.title or obj.title in ["New Novel", "."]:
-                    if meta.get('title'):
-                        obj.title = meta['title']
-                        updated = True
-                
+                    if meta.get('title'): obj.title = meta['title']; updated = True
                 if not obj.author or obj.author == "Unknown":
-                    if meta.get('author'):
-                        obj.author = meta['author']
-                        updated = True
-
+                    if meta.get('author'): obj.author = meta['author']; updated = True
                 if not obj.synopsis:
-                    if meta.get('synopsis'):
-                        obj.synopsis = meta['synopsis']
-                        updated = True
+                    if meta.get('synopsis'): obj.synopsis = meta['synopsis']; updated = True
                 
-                if updated:
-                    obj.save()
+                if updated: obj.save()
 
-                # Generate ulang chapter dari EPUB
                 obj.chapters.all().delete()
                 generate_chapters(obj)
                 self.message_user(request, f"Sukses ekstrak chapter dari {obj.epub_file.name}", level='SUCCESS')
-                
             except Exception as e:
                 self.message_user(request, f"Gagal proses EPUB: {e}", level='ERROR')
 
 # =====================================================
-# 4. CHAPTER ADMIN (Search Chapter)
+# 3. CHAPTER ADMIN (TEMPAT EDIT MASAL)
 # =====================================================
 @admin.register(Chapter)
 class ChapterAdmin(admin.ModelAdmin):
-    list_display = ('title', 'novel_link', 'order', 'chapter_index', 'uploaded_at')
+    # Tampilkan kolom yang penting
+    list_display = ('title', 'novel', 'order', 'chapter_index')
     
-    # Fitur Search: Cari judul chapter atau judul novel
+    # FITUR EDIT DI LIST (EDITABLE LIST)
+    # Ini memungkinkan edit judul/urutan LANGSUNG di tabel daftar tanpa masuk detail
+    list_editable = ('order', 'chapter_index', 'title') 
+    
     search_fields = ('title', 'novel__title') 
+    list_filter = ('novel',)
+    autocomplete_fields = ['novel'] 
     
-    list_filter = ('uploaded_at',)
-    autocomplete_fields = ['novel'] # Biar ringan loadnya
+    # Pagination (50 item per halaman biar ringan)
     list_per_page = 50 
     ordering = ('novel', 'order')
 
-    def novel_link(self, obj):
-        return obj.novel.title
-    novel_link.short_description = 'Novel'
-    novel_link.admin_order_field = 'novel__title'
-
 # =====================================================
-# 5. ADMIN LAINNYA (Fixed Bookmark)
+# 4. ADMIN LAINNYA
 # =====================================================
-
 @admin.register(Bookmark)
 class BookmarkAdmin(admin.ModelAdmin):
-    # Disesuaikan dengan models.py Anda: last_read_chapter & updated_at
     list_display = ('user', 'novel', 'last_read_chapter', 'updated_at')
     search_fields = ('user__username', 'novel__title')
-    
-    # Autocomplete field yang benar
     autocomplete_fields = ['user', 'novel', 'last_read_chapter']
 
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
-    list_display = ('user', 'novel_title', 'text_snippet', 'created_at')
+    list_display = ('user', 'text_snippet', 'created_at')
     search_fields = ('text', 'user__username')
-    list_filter = ('created_at',)
-    
-    # Jika Comment punya field chapter & user, bisa pakai ini:
-    autocomplete_fields = ['chapter', 'user']
-
-    def novel_title(self, obj):
-        return obj.chapter.novel.title if obj.chapter and obj.chapter.novel else "-"
     
     def text_snippet(self, obj):
         return obj.text[:50] + "..." if len(obj.text) > 50 else obj.text
@@ -125,9 +107,8 @@ class CommentAdmin(admin.ModelAdmin):
 @admin.register(NovelVote)
 class NovelVoteAdmin(admin.ModelAdmin):
     list_display = ('novel', 'user', 'score', 'created_at')
-    list_filter = ('score',)
 
 @admin.register(UserSettings)
 class UserSettingsAdmin(admin.ModelAdmin):
-    list_display = ('user', 'theme', 'font_size')
+    list_display = ('user', 'theme')
     search_fields = ('user__username',)
