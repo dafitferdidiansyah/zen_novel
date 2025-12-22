@@ -37,7 +37,7 @@ class NovelAdmin(admin.ModelAdmin):
             + f"?novel__id__exact={obj.id}"
         )
         return format_html(
-            '<a class="button" href="{}" style="background-color:#417690; color:white; padding:5px 10px; border-radius:5px; text-decoration:none;">Edit {} Chapters</a>',
+            '<a class="button" href="{}" style="background-color:#417690; color:white; padding:5px 10px; border-radius:5px; text-decoration:none;">Edit {} Chs</a>',
             url,
             count
         )
